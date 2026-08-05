@@ -1,0 +1,7 @@
+.github/**
+.vscode/**
+test/**
+scripts/**
+AGENTS.md
+SECURITY.md
+*.vsix

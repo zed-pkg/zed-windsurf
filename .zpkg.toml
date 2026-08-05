@@ -1,0 +1,24 @@
+[package]
+org = "zed-pkg"
+name = "zed-windsurf"
+version = "0.1.0"
+description = "Windsurf/Open VSX insights and resolutions for zed-pkg projects"
+license = "MIT"
+keywords = ["windsurf", "open-vsx", "package-manager", "ide-extension"]
+language = "javascript"
+
+[package.repository]
+vcs = "git"
+url = "https://github.com/zed-pkg/zed-windsurf"
+
+[publish]
+include_readme = true
+tag_format = "v{version}"
+exclude = ["*.vsix", "coverage/**", ".vscode-test/**"]
+smoke_test = "node --test"
+
+[install]
+adapter = "none"
+
+[scripts]
+test = "npm run check"

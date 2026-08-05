@@ -1,0 +1,200 @@
+{
+  "name": "zed-windsurf",
+  "displayName": "Zed Package Insights",
+  "description": "Real workspace diagnostics, package state, and safe recommended actions for zed-pkg projects in Windsurf.",
+  "version": "0.1.0",
+  "publisher": "zed-pkg",
+  "license": "MIT",
+  "homepage": "https://github.com/zed-pkg/zed-windsurf#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/zed-pkg/zed-windsurf.git"
+  },
+  "bugs": {
+    "url": "https://github.com/zed-pkg/zed-windsurf/issues"
+  },
+  "engines": {
+    "vscode": "^1.89.0"
+  },
+  "categories": [
+    "Other",
+    "Visualization",
+    "Linters"
+  ],
+  "keywords": [
+    "windsurf",
+    "zed-pkg",
+    "package-manager",
+    "dependencies",
+    "open-vsx"
+  ],
+  "main": "./src/extension.js",
+  "activationEvents": [
+    "workspaceContains:**/.zpkg.toml",
+    "workspaceContains:**/.zpkg.lock",
+    "onView:zedPackage.overview",
+    "onCommand:zedPackage.refresh",
+    "onCommand:zedPackage.showReport"
+  ],
+  "scripts": {
+    "lint": "node scripts/lint.js",
+    "test": "node --test",
+    "check": "npm run lint && npm test",
+    "package": "npx --yes @vscode/vsce@3.9.2 package --no-dependencies",
+    "publish:open-vsx": "npx --yes ovsx@1.0.2 publish"
+  },
+  "files": [
+    "src/**",
+    "resources/**",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "zedPackage",
+          "title": "Zed Package",
+          "icon": "resources/zed-package.svg"
+        }
+      ]
+    },
+    "views": {
+      "zedPackage": [
+        {
+          "id": "zedPackage.overview",
+          "name": "Overview"
+        },
+        {
+          "id": "zedPackage.dependencies",
+          "name": "Dependencies"
+        },
+        {
+          "id": "zedPackage.problems",
+          "name": "Problems"
+        },
+        {
+          "id": "zedPackage.actions",
+          "name": "Recommended Actions"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "zedPackage.refresh",
+        "title": "Zed Package: Refresh"
+      },
+      {
+        "command": "zedPackage.showReport",
+        "title": "Zed Package: Show Package Report"
+      },
+      {
+        "command": "zedPackage.openManifest",
+        "title": "Zed Package: Open Manifest"
+      },
+      {
+        "command": "zedPackage.openLockfile",
+        "title": "Zed Package: Open Lockfile"
+      },
+      {
+        "command": "zedPackage.install",
+        "title": "Zed Package: Install Dependencies",
+        "enablement": "isWorkspaceTrusted"
+      },
+      {
+        "command": "zedPackage.frozenInstall",
+        "title": "Zed Package: Restore Frozen Lock",
+        "enablement": "isWorkspaceTrusted"
+      },
+      {
+        "command": "zedPackage.addDependency",
+        "title": "Zed Package: Add Dependency",
+        "enablement": "isWorkspaceTrusted"
+      },
+      {
+        "command": "zedPackage.removeDependency",
+        "title": "Zed Package: Remove Dependency",
+        "enablement": "isWorkspaceTrusted"
+      },
+      {
+        "command": "zedPackage.storeStatus",
+        "title": "Zed Package: Show Store Status",
+        "enablement": "isWorkspaceTrusted"
+      },
+      {
+        "command": "zedPackage.authStatus",
+        "title": "Zed Package: Show Auth Status",
+        "enablement": "isWorkspaceTrusted"
+      },
+      {
+        "command": "zedPackage.releasePlan",
+        "title": "Zed Package: Show Release Plan",
+        "enablement": "isWorkspaceTrusted"
+      },
+      {
+        "command": "zedPackage.releasePreflight",
+        "title": "Zed Package: Run Release Preflight",
+        "enablement": "isWorkspaceTrusted"
+      },
+      {
+        "command": "zedPackage.selfUpdateCheck",
+        "title": "Zed Package: Check CLI Update",
+        "enablement": "isWorkspaceTrusted"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "zedPackage.refresh",
+          "when": "view == zedPackage.overview || view == zedPackage.dependencies || view == zedPackage.problems || view == zedPackage.actions",
+          "group": "navigation@1"
+        },
+        {
+          "command": "zedPackage.showReport",
+          "when": "view == zedPackage.overview",
+          "group": "navigation@2"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Zed Package",
+      "properties": {
+        "zedPackage.binaryPath": {
+          "type": "string",
+          "default": "zed",
+          "description": "Path or command name for the zed-pkg CLI. The extension always invokes it without a shell.",
+          "scope": "machine"
+        },
+        "zedPackage.autoRefresh": {
+          "type": "boolean",
+          "default": true,
+          "description": "Refresh package state when .zpkg.toml or .zpkg.lock changes."
+        },
+        "zedPackage.commandTimeoutSeconds": {
+          "type": "number",
+          "default": 120,
+          "minimum": 5,
+          "maximum": 1800,
+          "description": "Maximum duration for a zed CLI action before it is terminated."
+        },
+        "zedPackage.maxProjects": {
+          "type": "number",
+          "default": 100,
+          "minimum": 1,
+          "maximum": 1000,
+          "description": "Maximum number of zed-pkg project roots to inspect in one workspace."
+        }
+      }
+    }
+  },
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": "limited",
+      "description": "Manifest and lockfile insights remain available, but zed CLI detection and commands require Workspace Trust.",
+      "restrictedConfigurations": [
+        "zedPackage.binaryPath"
+      ]
+    }
+  }
+}
