@@ -1,5 +1,7 @@
 .github/**
 .vscode/**
+.gitignore
+.zpkg.*
 test/**
 scripts/**
 AGENTS.md

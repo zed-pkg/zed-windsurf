@@ -43,13 +43,6 @@
     "package": "npx --yes @vscode/vsce@3.9.2 package --no-dependencies",
     "publish:open-vsx": "npx --yes ovsx@1.0.2 publish"
   },
-  "files": [
-    "src/**",
-    "resources/**",
-    "README.md",
-    "CHANGELOG.md",
-    "LICENSE"
-  ],
   "contributes": {
     "viewsContainers": {
       "activitybar": [
