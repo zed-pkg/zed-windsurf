@@ -3,3 +3,8 @@ node_modules/
 .DS_Store
 coverage/
 .vscode-test/
+
+# >>> ores fleet hygiene — managed block, edits below are overwritten >>>
+tmp/temp/
+tmp/worktrees/
+# <<< ores fleet hygiene <<<
