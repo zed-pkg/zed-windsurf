@@ -35,6 +35,33 @@ function analyzeProject(input) {
   const lock = lockParsed ? extractLock(lockParsed) : null;
   const findings = [];
 
+  // Reject duplicate dependency keys within the same TOML section. The lite
+  // parser records all assignments, but the raw object keeps only the last
+  // one: without a diagnostic, a shadowed version looks authoritative.
+  const seenDependencyKeys = new Set();
+  for (const assignment of manifestParsed?.assignments ?? []) {
+    const section = assignment.sectionPath.join('.').toLowerCase();
+    const isDependencySection = section === 'dependencies'
+      || section.endsWith('.dependencies')
+      || section.endsWith('dev-dependencies')
+      || section.endsWith('build-dependencies')
+      || section.endsWith('peer-dependencies')
+      || section.endsWith('optional-dependencies');
+    if (!isDependencySection) continue;
+    const key = JSON.stringify([assignment.sectionPath, assignment.keyPath]);
+    if (seenDependencyKeys.has(key)) {
+      findings.push(finding('dependency-duplicate', 'error',
+        `Duplicate dependency declaration for ${assignment.keyPath.join('.')} in [${section}].`, {
+          file: 'manifest',
+          line: assignment.line,
+          detail: 'The later TOML value shadows the earlier declaration in this editor parser.',
+          recommendation: 'Remove the duplicate declaration and use the zed CLI to validate the final manifest.'
+        }));
+    } else {
+      seenDependencyKeys.add(key);
+    }
+  }
+
   for (const error of manifestParsed?.errors ?? []) {
     findings.push(finding('manifest-parse', 'error', error.message, {
       file: 'manifest', line: error.line,
