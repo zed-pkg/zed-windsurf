@@ -113,3 +113,39 @@ version = "1.0.0"
   });
   assert.equal(result.findings.filter((item) => item.id === 'dependency-duplicate').length, 0);
 });
+
+test('independent dependency array-table entries are not shadowed duplicates', () => {
+  const manifest = `[package]
+org = "acme"
+name = "widget"
+version = "1.0.0"
+
+[[dependencies]]
+"acme/http-kit" = "^1"
+
+[[dependencies]]
+"acme/http-kit" = "^2"
+`;
+  const result = analyzeProject({
+    root: '/tmp/widget', rootName: 'widget', manifestText: manifest,
+    lockText: LOCK, hasModules: true, cli: CLI
+  });
+  assert.equal(result.findings.filter((item) => item.id === 'dependency-duplicate').length, 0);
+});
+
+test('duplicate keys inside one dependency array-table remain rejected', () => {
+  const manifest = `[package]
+org = "acme"
+name = "widget"
+version = "1.0.0"
+
+[[dependencies]]
+"acme/http-kit" = "^1"
+"acme/http-kit" = "^2"
+`;
+  const result = analyzeProject({
+    root: '/tmp/widget', rootName: 'widget', manifestText: manifest,
+    lockText: LOCK, hasModules: true, cli: CLI
+  });
+  assert.equal(result.findings.filter((item) => item.id === 'dependency-duplicate').length, 1);
+});
