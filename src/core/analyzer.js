@@ -48,7 +48,9 @@ function analyzeProject(input) {
       || section.endsWith('peer-dependencies')
       || section.endsWith('optional-dependencies');
     if (!isDependencySection) continue;
-    const key = JSON.stringify([assignment.sectionPath, assignment.keyPath]);
+    // Array-table instances are independent TOML tables. Do not treat a key
+    // in the next [[dependencies]] entry as a duplicate of the previous one.
+    const key = JSON.stringify([assignment.sectionPath, assignment.arrayIndex, assignment.keyPath]);
     if (seenDependencyKeys.has(key)) {
       findings.push(finding('dependency-duplicate', 'error',
         `Duplicate dependency declaration for ${assignment.keyPath.join('.')} in [${section}].`, {
