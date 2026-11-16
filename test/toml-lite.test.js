@@ -88,3 +88,30 @@ test('records malformed assignments instead of throwing', () => {
   assert.equal(parsed.errors.length, 1);
   assert.match(parsed.errors[0].message, /key\/value/);
 });
+
+test('reserved-looking inline key cannot forge inherited package identity', () => {
+  const parsed = parseToml('__proto__ = { package = { org = "forged", name = "fake", version = "9.9.9" } }');
+  assert.deepEqual(parsed.errors, []);
+  assert.equal(Object.getPrototypeOf(parsed.data), Object.prototype);
+  assert.equal(Object.hasOwn(parsed.data, '__proto__'), true);
+  assert.equal(Object.hasOwn(parsed.data, 'package'), false);
+  assert.equal(extractManifest(parsed).package.org, null);
+  assert.equal(Object.prototype.org, undefined);
+});
+
+test('prototype-shaped section paths and array tables stay ordinary TOML data', () => {
+  const parsed = parseToml(`[__proto__.package]
+org = "local"
+[[__proto__.records]]
+name = "one"
+[[__proto__.records]]
+name = "two"
+`);
+  assert.deepEqual(parsed.errors, []);
+  assert.equal(Object.getPrototypeOf(parsed.data), Object.prototype);
+  assert.equal(Object.hasOwn(parsed.data, '__proto__'), true);
+  assert.equal(parsed.data.__proto__.package.org, 'local');
+  assert.deepEqual(parsed.data.__proto__.records.map((item) => item.name), ['one', 'two']);
+  assert.equal(Object.hasOwn(parsed.data, 'package'), false);
+  assert.equal(extractManifest(parsed).package.org, null);
+});
