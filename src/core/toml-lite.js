@@ -195,11 +195,27 @@ function parseValue(input) {
   return value;
 }
 
+// TOML keys are untrusted. A normal assignment to __proto__ would mutate
+// an object's prototype instead of storing a manifest key, allowing forged
+// inherited package metadata. Define that key as an ordinary own property.
+function setOwn(root, key, value) {
+  if (key === '__proto__') {
+    Object.defineProperty(root, key, {
+      value,
+      configurable: true,
+      enumerable: true,
+      writable: true
+    });
+  } else {
+    root[key] = value;
+  }
+}
+
 function ensureObject(root, path) {
   let current = root;
   for (const key of path) {
     if (!Object.prototype.hasOwnProperty.call(current, key) || current[key] === null || typeof current[key] !== 'object' || Array.isArray(current[key])) {
-      current[key] = {};
+      setOwn(current, key, {});
     }
     current = current[key];
   }
@@ -209,7 +225,7 @@ function ensureObject(root, path) {
 function setNested(root, path, value) {
   if (path.length === 0) return;
   const parent = ensureObject(root, path.slice(0, -1));
-  parent[path[path.length - 1]] = value;
+  setOwn(parent, path[path.length - 1], value);
 }
 
 function getNested(root, path) {
@@ -243,7 +259,7 @@ function parseToml(text) {
       }
       const parent = ensureObject(data, path.slice(0, -1));
       const key = path[path.length - 1];
-      if (!Array.isArray(parent[key])) parent[key] = [];
+      if (!Array.isArray(parent[key])) setOwn(parent, key, []);
       const item = {};
       parent[key].push(item);
       sectionPath = path;
