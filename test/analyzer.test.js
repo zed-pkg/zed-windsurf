@@ -72,3 +72,80 @@ test('untrusted workspace reports Restricted Mode without claiming the CLI is mi
   assert.ok(project.findings.some((item) => item.id === 'cli-untrusted' && item.severity === 'information'));
   assert.ok(!project.findings.some((item) => item.id === 'cli-unavailable'));
 });
+
+test('duplicate dependency assignments are errors rather than silent last-write wins', () => {
+  const manifest = `[package]
+org = "acme"
+name = "widget"
+version = "1.0.0"
+
+[dependencies]
+"acme/http-kit" = "^1"
+"acme/http-kit" = "^2"
+`;
+  const result = analyzeProject({
+    root: '/tmp/widget', rootName: 'widget', manifestText: manifest,
+    lockText: LOCK, hasModules: true, cli: CLI
+  });
+  const duplicates = result.findings.filter((item) => item.id === 'dependency-duplicate');
+  assert.equal(duplicates.length, 1);
+  assert.equal(duplicates[0].severity, 'error');
+  assert.match(duplicates[0].message, /acme\/http-kit/);
+  assert.equal(duplicates[0].file, 'manifest');
+  assert.equal(result.counts.error, 1);
+});
+
+test('dependency name may appear in distinct dependency sections', () => {
+  const manifest = `[package]
+org = "acme"
+name = "widget"
+version = "1.0.0"
+
+[dependencies]
+"acme/http-kit" = "^1"
+
+[dev-dependencies]
+"acme/http-kit" = "^1"
+`;
+  const result = analyzeProject({
+    root: '/tmp/widget', rootName: 'widget', manifestText: manifest,
+    lockText: LOCK, hasModules: true, cli: CLI
+  });
+  assert.equal(result.findings.filter((item) => item.id === 'dependency-duplicate').length, 0);
+});
+
+test('independent dependency array-table entries are not shadowed duplicates', () => {
+  const manifest = `[package]
+org = "acme"
+name = "widget"
+version = "1.0.0"
+
+[[dependencies]]
+"acme/http-kit" = "^1"
+
+[[dependencies]]
+"acme/http-kit" = "^2"
+`;
+  const result = analyzeProject({
+    root: '/tmp/widget', rootName: 'widget', manifestText: manifest,
+    lockText: LOCK, hasModules: true, cli: CLI
+  });
+  assert.equal(result.findings.filter((item) => item.id === 'dependency-duplicate').length, 0);
+});
+
+test('duplicate keys inside one dependency array-table remain rejected', () => {
+  const manifest = `[package]
+org = "acme"
+name = "widget"
+version = "1.0.0"
+
+[[dependencies]]
+"acme/http-kit" = "^1"
+"acme/http-kit" = "^2"
+`;
+  const result = analyzeProject({
+    root: '/tmp/widget', rootName: 'widget', manifestText: manifest,
+    lockText: LOCK, hasModules: true, cli: CLI
+  });
+  assert.equal(result.findings.filter((item) => item.id === 'dependency-duplicate').length, 1);
+});
